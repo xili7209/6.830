@@ -22,7 +22,7 @@ public class Utility {
      * @return a String array of length len populated with the (possibly null) strings in val,
      * and an appended increasing integer at the end (val1, val2, etc.).
      */
-    public static String[] getStrings(int len, String val) {
+    public static String[]getStrings(int len, String val) {
         String[] strings = new String[len];
         for (int i = 0; i < len; ++i)
             strings[i] = val + i;
@@ -145,7 +145,7 @@ public class Utility {
         Database.getCatalog().addTable(hf, UUID.randomUUID().toString());
         return hf;
     }
-    
+
     public static HeapFile openHeapFile(int cols, String colPrefix, File f) {
         // create the HeapFile and add it to the catalog
     	TupleDesc td = getTupleDesc(cols, colPrefix);

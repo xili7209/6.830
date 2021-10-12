@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * For now, this is a stub catalog that must be populated with tables by a
  * user program before it can be used -- eventually, this should be converted
  * to a catalog that reads a catalog table from disk.
- * 
+ *
  * @Threadsafe
  */
 public class Catalog {
@@ -29,6 +29,22 @@ public class Catalog {
      */
     public Catalog() {
         // some code goes here
+    }
+    private HashMap<Integer,Table> tables = new HashMap<>();
+    private HashMap<String,Integer> nameToTable = new HashMap<>();
+    public static class Table {
+
+        private TupleDesc tupleDesc;
+        private DbFile file;
+        private String name;
+        private String primaryKey;
+        public Table(TupleDesc tupleDesc, DbFile file, String name, String primaryKey) {
+            this.tupleDesc = tupleDesc;
+            this.file = file;
+            this.name = name;
+            this.primaryKey = primaryKey;
+        }
+
     }
 
     /**
@@ -42,6 +58,9 @@ public class Catalog {
      */
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
+        tables.put(file.getId(),new Table(file.getTupleDesc(),file,name,pkeyField));
+        nameToTable.put(name,file.getId());
+
     }
 
     public void addTable(DbFile file, String name) {
@@ -65,7 +84,8 @@ public class Catalog {
      */
     public int getTableId(String name) throws NoSuchElementException {
         // some code goes here
-        return 0;
+        if(nameToTable.containsKey(name)) return nameToTable.get(name);
+        throw new NoSuchElementException();
     }
 
     /**
@@ -76,7 +96,8 @@ public class Catalog {
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        if(tables.containsKey(tableid)) return tables.get(tableid).tupleDesc;
+        throw new NoSuchElementException();
     }
 
     /**
@@ -87,29 +108,31 @@ public class Catalog {
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        if(tables.containsKey(tableid)) return tables.get(tableid).file;
+        throw new NoSuchElementException();
     }
 
     public String getPrimaryKey(int tableid) {
         // some code goes here
-        return null;
+        return tables.get(tableid).primaryKey;
     }
 
     public Iterator<Integer> tableIdIterator() {
         // some code goes here
-        return null;
+        return tables.keySet().iterator();
     }
 
     public String getTableName(int id) {
         // some code goes here
-        return null;
+        return tables.get(id).name;
     }
-    
+
     /** Delete all tables from the catalog */
     public void clear() {
         // some code goes here
+        tables.clear();
     }
-    
+
     /**
      * Reads the schema from a file and creates the appropriate tables in the database.
      * @param catalogFile
@@ -119,7 +142,7 @@ public class Catalog {
         String baseFolder=new File(new File(catalogFile).getAbsolutePath()).getParent();
         try {
             BufferedReader br = new BufferedReader(new FileReader(catalogFile));
-            
+
             while ((line = br.readLine()) != null) {
                 //assume line is of the format name (field type, field type, ...)
                 String name = line.substring(0, line.indexOf("(")).trim();
