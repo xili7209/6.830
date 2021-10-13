@@ -36,7 +36,7 @@ public class BufferPool {
 
     private int pageNumber;
 
-    private HashMap<Integer,Page> pages = new HashMap<>();
+    private HashMap<PageId,Page> pages = new HashMap<>();
     /**
      * Creates a BufferPool that caches up to numPages pages.
      *
@@ -80,7 +80,9 @@ public class BufferPool {
         throws TransactionAbortedException, DbException {
         // some code goes here
         if(pages.containsKey(pid)) return pages.get(pid);
-        return null;
+        Page page = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
+        pages.put(pid,page);
+        return page;
     }
 
     /**
