@@ -1,15 +1,13 @@
 package simpledb.storage;
 
-import simpledb.common.Database;
-import simpledb.common.Permissions;
-import simpledb.common.DbException;
-import simpledb.common.DeadlockException;
+import simpledb.common.*;
 import simpledb.transaction.TransactionAbortedException;
 import simpledb.transaction.TransactionId;
 
 import java.io.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -36,6 +34,8 @@ public class BufferPool {
 
     private int pageNumber;
 
+    private LRU lru;
+
     private HashMap<PageId,Page> pages = new HashMap<>();
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -45,6 +45,7 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         pageNumber = numPages;
+        lru = new LRU(pageNumber);
     }
 
     public static int getPageSize() {
@@ -79,9 +80,12 @@ public class BufferPool {
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
         // some code goes here
-        if(pages.containsKey(pid)) return pages.get(pid);
+        if(lru.containsKey(pid)) return lru.get(pid);
         Page page = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
-        pages.put(pid,page);
+        while(lru.getSize()>=pageNumber){
+            evictPage();
+        }
+        lru.put(pid,page);
         return page;
     }
 
@@ -147,6 +151,8 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
+        List<Page> dirtyPages = Database.getCatalog().getDatabaseFile(tableId).insertTuple(tid, t);
+        updatePages(tid,dirtyPages);
     }
 
     /**
@@ -166,6 +172,15 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
+        List<Page> dirtyPages = Database.getCatalog().getDatabaseFile(t.getRecordId().getPageId().getTableId()).deleteTuple(tid, t);
+        updatePages(tid,dirtyPages);
+    }
+
+    private void updatePages(TransactionId tid, List<Page> ps){
+        for(Page p:ps){
+            p.markDirty(true,tid);
+            lru.put(p.getId(),p);
+        }
     }
 
     /**
@@ -190,6 +205,7 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
         // not necessary for lab1
+        lru.remove(pid);
     }
 
     /**
@@ -199,6 +215,13 @@ public class BufferPool {
     private synchronized  void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
+        Page page = lru.get(pid);
+        if(page.isDirty()!=null){
+            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(page);
+            page.markDirty(false,null);
+        }
+
+
     }
 
     /** Write all pages of the specified transaction to disk.
@@ -215,6 +238,16 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
+        LRU.DLinkedNode dLinkedNode = lru.evictNode();
+        PageId id = dLinkedNode.getPageVal().getId();
+        try {
+            flushPage(id);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        discardPage(id);
+
+
     }
 
 }

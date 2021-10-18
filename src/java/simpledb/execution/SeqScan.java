@@ -46,6 +46,13 @@ public class SeqScan implements OpIterator {
         // some code goes here
         this.tableAlias = tableAlias;
         iterator = Database.getCatalog().getDatabaseFile(tableid).iterator(tid);
+        try {
+            iterator.open();
+        } catch (DbException e) {
+            e.printStackTrace();
+        } catch (TransactionAbortedException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

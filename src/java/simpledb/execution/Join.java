@@ -1,5 +1,6 @@
 package simpledb.execution;
 
+import simpledb.common.Database;
 import simpledb.transaction.TransactionAbortedException;
 import simpledb.common.DbException;
 import simpledb.storage.Tuple;
@@ -16,6 +17,7 @@ public class Join extends Operator {
     private final JoinPredicate p;
     private OpIterator child1;
     private OpIterator child2;
+    private Tuple t;
     /**
      * Constructor. Accepts two children to join and the predicate to join them
      * on
@@ -104,24 +106,33 @@ public class Join extends Operator {
      * @see JoinPredicate#filter
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
-        // some code goes here
-        while(child1.hasNext()){
-            Tuple t1 = child1.next();
+        // Not Sure
+        while(child1.hasNext() || t != null){
+            if(child1.hasNext() && t == null){
+                t = child1.next();
+            }
             while(child2.hasNext()){
                 Tuple t2 = child2.next();
-                if(p.filter(t1,t2)){
-                    TupleDesc td1 = t1.getTupleDesc();
+                if(p.filter(t,t2)){
+                    TupleDesc td1 = t.getTupleDesc();
                     TupleDesc td2 = t2.getTupleDesc();
-                    TupleDesc joinedTd = TupleDesc.merge(td1,td2);
-                    Tuple newTuple = new Tuple(joinedTd);
-                    for(int i = 0;i<td1.numFields();i++) newTuple.setField(i,t1.getField(i));
-                    for(int i = 0;i<td2.numFields();i++) newTuple.setField(i+ td1.numFields(),t2.getField(i));
+                    TupleDesc newTd = TupleDesc.merge(td1,td2);
+                    Tuple newTuple = new Tuple(newTd);
+                    int i=0;
+                    for(;i<td1.numFields();++i)
+                        newTuple.setField(i,t.getField(i));
+                    for(int j=0;j<td2.numFields();++j)
+                        newTuple.setField(i+j,t2.getField(j));
+
                     return newTuple;
                 }
             }
             child2.rewind();
+            t = null;
         }
         return null;
+
+
     }
 
     @Override

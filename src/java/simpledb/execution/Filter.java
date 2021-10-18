@@ -45,12 +45,14 @@ public class Filter extends Operator {
     public void open() throws DbException, NoSuchElementException,
             TransactionAbortedException {
         // some code goes here
+        child.open();
         super.open();
     }
 
     public void close() {
         // some code goes here
         super.close();
+        child.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {

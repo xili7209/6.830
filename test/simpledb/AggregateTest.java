@@ -8,6 +8,7 @@ import junit.framework.JUnit4TestAdapter;
 import org.junit.Before;
 import org.junit.Test;
 
+import simpledb.common.DbException;
 import simpledb.common.Type;
 import simpledb.common.Utility;
 import simpledb.execution.Aggregate;
@@ -15,6 +16,7 @@ import simpledb.execution.Aggregator;
 import simpledb.execution.OpIterator;
 import simpledb.storage.TupleDesc;
 import simpledb.systemtest.SimpleDbTestBase;
+import simpledb.transaction.TransactionAbortedException;
 
 public class AggregateTest extends SimpleDbTestBase {
 

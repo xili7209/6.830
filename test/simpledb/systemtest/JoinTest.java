@@ -54,12 +54,20 @@ public class JoinTest extends SimpleDbTestBase {
         TransactionId tid = new TransactionId();
         SeqScan ss1 = new SeqScan(tid, table1.getId(), "");
         SeqScan ss2 = new SeqScan(tid, table2.getId(), "");
+        //self edit
+//        ss1.open();
+//        ss2.open();
+        // *******
         JoinPredicate p = new JoinPredicate(0, Predicate.Op.EQUALS, 0);
         Join joinOp = new Join(p, ss1, ss2);
 
+
         // test the join results
         SystemTestUtil.matchTuples(joinOp, expectedResults);
-
+        //self edit
+//        ss1.close();
+//        ss2.close();
+        // *******
         joinOp.close();
         Database.getBufferPool().transactionComplete(tid);
     }
